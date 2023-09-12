@@ -35,3 +35,32 @@ def shannon_entropy(X : pd.Series) -> float:
 
         h += __label_shannon_entropy__(label_count[idx], total_samples)
     return h
+
+def __attr_val_gain__(Sv : pd.DataFrame, out_label : str, S_count : int) -> float:
+    Sv_count = Sv.shape[0]
+    h_Sv     = shannon_entropy(Sv[out_label])
+    
+    Sv_gain  = (Sv_count / S_count) * h_Sv
+    return Sv_gain
+
+def __attr_gain__(S : pd.DataFrame, attr : str, out_label : str, S_count : int) -> float:
+    attr_vals = S[attr].unique()
+    """
+        attr_vals example:
+
+        array([1, 0])
+    """
+
+    attr_gain = 0
+    for val in attr_vals:
+        Sv         = S[S[attr] == val]
+        Sv_gain    = __attr_val_gain__(Sv, out_label, S_count)
+        attr_gain += Sv_gain
+    return attr_gain
+
+def gain(S : pd.DataFrame, attr : str, out_label : str) -> float:
+    S_count = S.shape[0]
+    h_S     = shannon_entropy(S[out_label])
+    
+    attr_gain = __attr_gain__(S, attr, out_label, S_count)
+    return h_S - attr_gain
