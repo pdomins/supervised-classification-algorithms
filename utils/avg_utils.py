@@ -10,5 +10,4 @@ def calculate_average(predictions : list):
         numeric_sum = sum(predictions)
         average_numeric = numeric_sum / len(predictions)
         return average_numeric
-    else:
-        return __calculate_average_string(predictions)
+    return __calculate_average_string(predictions)

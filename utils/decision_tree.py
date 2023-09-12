@@ -6,6 +6,6 @@ class DecisionTree:
         # TODO
         pass
         
-    def evaluate(self, test_sample : pd.Series):
+    def predict(self, test_sample : pd.Series):
         # TODO
         pass
