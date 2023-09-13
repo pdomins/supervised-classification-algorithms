@@ -31,10 +31,10 @@ class AttrNode(TreeNode):
 class ValueNode(TreeNode):
     pass
 
-def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs : list[str], cats4attrs : dict[str, list[str]]) -> str:
+def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str], cats4attrs : dict[str, list[str]]) -> str:
     max_g_attr = None
     max_g      = None
-    for attr in attrs:
+    for attr in attrs_by_priority:
         g = gain(df, out_col, cats4attr=cats4attrs[attr])
 
         if max_g is None or g > max_g:
@@ -46,17 +46,17 @@ def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs : list[str], cats4
 def __build_branch__():
     pass
 
-def __id3_dfs__(df : pd.DataFrame, out_col : str, attrs : list[str], cats4attrs : dict[str, list[AttrCat]]) -> TreeNode:
-    max_g_attr = __max_gain_attr__(df, out_col, attrs, cats4attrs)
+def __id3_dfs__(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]]) -> TreeNode:
+    max_g_attr = __max_gain_attr__(df, out_col, attrs_by_priority, cats4attrs)
     value_node = ValueNode()
     attr_node  = AttrNode(max_g_attr, None)
 
-def id3(df : pd.DataFrame, out_col : str, attrs : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> DecisionTree:
+def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> DecisionTree:
     
-    if attrs is None:
-        no_out_df = df.drop(columns=[out_col])
-        attrs     = no_out_df.columns
+    if attrs_by_priority is None:
+        no_out_df         = df.drop(columns=[out_col])
+        attrs_by_priority = no_out_df.columns
 
-    cats4attrs = categorize_attrs_by_vals_from_df(df, attrs, attrs_vals, cats4attrs)
+    cats4attrs = categorize_attrs_by_vals_from_df(df, attrs_by_priority, attrs_vals, cats4attrs)
 
-    __id3_dfs__(df, out_col, attrs, cats4attrs)
+    __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs)
