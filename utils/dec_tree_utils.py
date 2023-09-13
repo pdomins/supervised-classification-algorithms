@@ -1,5 +1,66 @@
+from dataclasses import dataclass
+from typing      import Callable, Any
 import pandas as pd
 import math
+
+@dataclass
+class AttrCat:
+    cat_label : Any
+    slct_f    : Callable[[pd.DataFrame | pd.Series], pd.Series]
+
+def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]):
+    value_counts = dict()
+    for cat in cats4attr:
+        X_v = X[cat.slct_f(X)]
+
+        value_counts[cat.cat_label] = X_v.count()
+    return pd.Series(data=value_counts, name="count")
+
+def __create_attr_cat__(cat_label : Any, df_slct_f : Callable[[pd.DataFrame], pd.Series], s_slct_f : Callable[[pd.Series], pd.Series]):
+    
+    def slct_f(df : pd.DataFrame | pd.Series) -> pd.Series:
+        if isinstance(df, pd.DataFrame):
+            return df_slct_f(df)
+    
+        if isinstance(df, pd.Series):
+            return s_slct_f(df)
+    
+        raise ValueError("df must be pandas DataFrame or Series")
+    
+    return AttrCat(cat_label, slct_f)
+
+def categorize_attr(cat_defs : list[dict[str, Any]]) -> list[AttrCat]:
+    cat_def_required_keys = set(["cat_label", "df_slct_f", "s_slct_f"])
+    cats4attr = list()
+    i = 0
+    for cat_def in cat_defs:
+        if not cat_def_required_keys.issubset(cat_def.keys()):
+            raise ValueError("missing definition keys at category {}".format(i))
+        
+        cat = __create_attr_cat__(cat_def["cat_label"], cat_def["df_slct_f"], cat_def["s_slct_f"])
+        cats4attr.append(cat)
+        
+        i += 1
+
+    return cats4attr
+
+def __templ_df_slct_f_by_vals__(attr : str, val : Any) -> pd.Series:
+    return lambda df : df[attr] == val
+        
+def __templ_s_slct_f_by_vals__(val : Any) -> pd.Series:
+    return lambda s : s == val
+
+def categorize_attr_by_vals(attr : str, attr_vals : list[Any]) -> list[AttrCat]:
+    cats4attr = list()
+
+    for val in attr_vals:
+        
+        df_slct_f = __templ_df_slct_f_by_vals__(attr, val)
+        s_slct_f  = __templ_s_slct_f_by_vals__(val)
+        
+        cat       = __create_attr_cat__(val, df_slct_f, s_slct_f)
+        cats4attr.append(cat)
+    return cats4attr
 
 def __label_shannon_entropy__(positive_cases : int, total_cases : int) -> float:
     if positive_cases == 0:
@@ -43,24 +104,26 @@ def __attr_val_gain__(Sv : pd.DataFrame, out_label : str, S_count : int) -> floa
     Sv_gain  = (Sv_count / S_count) * h_Sv
     return Sv_gain
 
-def __attr_gain__(S : pd.DataFrame, attr : str, out_label : str, S_count : int) -> float:
-    attr_vals = S[attr].unique()
-    """
-        attr_vals example:
-
-        array([1, 0])
-    """
-
+def __attr_gain__(S : pd.DataFrame, cats4attr : list[AttrCat], out_label : str, S_count : int) -> float:
     attr_gain = 0
-    for val in attr_vals:
-        Sv         = S[S[attr] == val]
+    for cat in cats4attr:
+        Sv         = S[cat.slct_f(S)]
         Sv_gain    = __attr_val_gain__(Sv, out_label, S_count)
         attr_gain += Sv_gain
     return attr_gain
 
-def gain(S : pd.DataFrame, attr : str, out_label : str) -> float:
+def gain(S : pd.DataFrame, out_label : str, attr : str = None, attr_vals : list[str] = None, cats4attr : list[AttrCat] = None) -> float:
+    if cats4attr is None and attr is None:
+        raise ValueError("must provide either cats4attr or attr. Both cannot be None")
+    
     S_count = S.shape[0]
     h_S     = shannon_entropy(S[out_label])
     
-    attr_gain = __attr_gain__(S, attr, out_label, S_count)
+    if cats4attr is None:
+        if attr_vals is None:
+            attr_vals = S[attr].unique()
+        
+        cats4attr = categorize_attr_by_vals(attr, attr_vals)
+
+    attr_gain = __attr_gain__(S, cats4attr, out_label, S_count)
     return h_S - attr_gain
