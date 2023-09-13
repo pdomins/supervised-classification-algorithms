@@ -62,6 +62,26 @@ def categorize_attr_by_vals(attr : str, attr_vals : list[Any]) -> list[AttrCat]:
         cats4attr.append(cat)
     return cats4attr
 
+def categorize_attrs_by_vals_from_df(df : pd.DataFrame, attrs : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> dict[str, list[AttrCat]]:
+    if attrs is None:
+        attrs = df.columns
+    
+    attrs_vals_provided = False
+    if attrs_vals is not None:
+        attrs_vals_provided = True
+
+    if cats4attrs is None:
+        cats4attrs = dict()
+
+    for attr in attrs:
+        if attr not in cats4attrs:
+            attr_vals = df[attr].unique() if not attrs_vals_provided or attr not in attr_vals \
+                else    attr_vals[attr]
+            
+            cats4attrs[attr] = categorize_attr_by_vals(attr, attr_vals)
+    
+    return cats4attrs
+
 def __label_shannon_entropy__(positive_cases : int, total_cases : int) -> float:
     if positive_cases == 0:
         return 0
