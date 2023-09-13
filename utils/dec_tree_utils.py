@@ -8,7 +8,7 @@ class AttrCat:
     cat_label : Any
     slct_f    : Callable[[pd.DataFrame | pd.Series], pd.Series]
 
-def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]):
+def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]) -> pd.Series:
     value_counts = dict()
     for cat in cats4attr:
         X_v = X[cat.slct_f(X)]
@@ -16,7 +16,7 @@ def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]):
         value_counts[cat.cat_label] = X_v.count()
     return pd.Series(data=value_counts, name="count")
 
-def __create_attr_cat__(cat_label : Any, df_slct_f : Callable[[pd.DataFrame], pd.Series], s_slct_f : Callable[[pd.Series], pd.Series]):
+def __create_attr_cat__(cat_label : Any, df_slct_f : Callable[[pd.DataFrame], pd.Series], s_slct_f : Callable[[pd.Series], pd.Series]) -> AttrCat:
     
     def slct_f(df : pd.DataFrame | pd.Series) -> pd.Series:
         if isinstance(df, pd.DataFrame):
