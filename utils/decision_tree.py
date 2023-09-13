@@ -14,14 +14,18 @@ class DecisionTree:
         pass
 
 @dataclass
+class LeafNode:
+    value    : Any
+
+@dataclass
 class TreeNode:
     value    : Any
-    children : dict[Any, 'TreeNode']
+    children : dict[Any, 'TreeNode' | LeafNode]
 
 @dataclass
 class AttrNode(TreeNode):
     value    : str
-    children : dict[str, 'TreeNode']
+    children : dict[str, TreeNode | LeafNode]
 
 @dataclass
 class ValueNode(TreeNode):
@@ -44,6 +48,8 @@ def __build_branch__():
 
 def __id3_dfs__(df : pd.DataFrame, out_col : str, attrs : list[str], cats4attrs : dict[str, list[AttrCat]]) -> TreeNode:
     max_g_attr = __max_gain_attr__(df, out_col, attrs, cats4attrs)
+    value_node = ValueNode()
+    attr_node  = AttrNode(max_g_attr, None)
 
 def id3(df : pd.DataFrame, out_col : str, attrs : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> DecisionTree:
     
