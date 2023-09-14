@@ -36,9 +36,12 @@ class DecisionTree:
 
         while not isinstance(curr_node, LeafNode):
             curr_val_node = decide4attr(curr_node, test_sample)
-            curr_node     = curr_val_node.next_level
 
-            predict_decisions.append(curr_val_node.value.cat_label)
+            predict_decisions.append({
+                curr_node.attr : curr_val_node.value.cat_label
+            })
+
+            curr_node     = curr_val_node.next_level
         
         self.__last_predict_decisions__ = predict_decisions
         return curr_node.out_label
