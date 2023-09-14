@@ -21,8 +21,8 @@ class LeafNode:
 
 class DecisionTree:
 
-    def __init__(self, trunk : AttrNode):
-        self.trunk = trunk
+    def __init__(self, root : AttrNode):
+        self.root = root
         
     def predict(self, test_sample : pd.Series):
         # TODO
@@ -133,6 +133,6 @@ def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, 
 
     cats4attrs = categorize_attrs_by_vals_from_df(df, attrs_by_priority, attrs_vals, cats4attrs)
 
-    trunk = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, save_decision_df=save_decision_df)
+    root = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, save_decision_df=save_decision_df)
 
-    return DecisionTree(trunk)
+    return DecisionTree(root)
