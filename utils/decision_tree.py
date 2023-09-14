@@ -1,5 +1,6 @@
 from typing         import Any
 from dataclasses    import dataclass
+from collections    import deque
 from dec_tree_utils import AttrCat, categorize_attrs_by_vals_from_df, apply_cats_to_df, gain
 import pandas as pd
 
@@ -27,8 +28,9 @@ def decide4attr(attr_node : AttrNode, sample : pd.Series) -> ValueNode:
 
 class DecisionTree:
 
-    def __init__(self, root : AttrNode):
-        self.root = root
+    def __init__(self, root : AttrNode, out_attr : str):
+        self.root     = root
+        self.out_attr = out_attr
         
     def predict(self, test_sample : pd.Series) -> Any:
         curr_node         = self.root
@@ -45,6 +47,37 @@ class DecisionTree:
         
         self.__last_predict_decisions__ = predict_decisions
         return curr_node.out_label
+    
+    def __as_dict__(self) -> dict:
+        node_queue = deque()
+
+        root_repr_node  = dict()
+        root_node       = self.root
+        node_queue.append((root_node, root_repr_node))
+
+        while node_queue:
+            curr_node, repr_node = node_queue.popleft()
+
+            repr_node[curr_node.attr] = dict()
+            repr_node = repr_node[curr_node.attr]
+
+            for val_key in curr_node.values.keys():
+                curr_val_node        = curr_node.values[val_key]
+                cat_label            = curr_val_node.value.cat_label
+
+                next_level = curr_val_node.next_level
+                if isinstance(next_level, LeafNode):
+                    repr_node[cat_label] = { self.out_attr : next_level.out_label }
+                else:
+                    repr_node[cat_label] = dict()
+                    node_queue.append((curr_val_node.next_level, repr_node[cat_label]))
+        
+        return root_repr_node
+    
+    def __repr__(self) -> str:
+        dec_tree_as_dict = self.__as_dict__()
+        return dec_tree_as_dict.__repr__()
+
 
 
 def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]]) -> str:
@@ -154,4 +187,4 @@ def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, 
 
     root = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, save_decision_df=save_decision_df)
 
-    return DecisionTree(root)
+    return DecisionTree(root, out_col)
