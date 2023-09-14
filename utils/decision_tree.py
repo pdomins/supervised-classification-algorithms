@@ -112,7 +112,7 @@ def __build_leaf_node__(base_case : int, df : pd.DataFrame, out_col : str, paren
     return base_case_dict[base_case](df, out_col, parent_df)
 
 def __id3_dfs__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], parent_df : pd.DataFrame = None, save_decision_df : bool = False) -> AttrNode | LeafNode:
-    base_case     = __is_base_case__(df, out_col, remaining_attrs_by_priority)
+    base_case = __is_base_case__(df, out_col, remaining_attrs_by_priority)
     if base_case is not None :
         return __build_leaf_node__(base_case, df, out_col, parent_df)
 
