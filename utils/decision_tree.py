@@ -12,6 +12,7 @@ class AttrNode:
 class ValueNode:
     value      : Any
     next_level : AttrNode | 'LeafNode'
+    train_df   : pd.DataFrame = None
 
 @dataclass
 class LeafNode:
@@ -40,14 +41,16 @@ def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs_by_priority : list
 
     return max_g_attr
 
-def __build_branch__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], max_g_attr : str) -> AttrNode:
+def __build_branch__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], max_g_attr : str, save_decision_df : bool = False) -> AttrNode:
     branches = dict()
     cats_dfs_dict = apply_cats_to_df(df, cats4attrs[max_g_attr])
     for cat_key in cats_dfs_dict.keys():
         curr_cat_df       = cats_dfs_dict[cat_key]
         child_branch      = __id3_dfs__(curr_cat_df, out_col, remaining_attrs_by_priority, cats4attrs, df)
         
-        value_node        = ValueNode(cat_key, child_branch)
+        value_node        = ValueNode(cat_key, child_branch) if not save_decision_df \
+                       else ValueNode(cat_key, child_branch, curr_cat_df)
+        
         branches[cat_key] = value_node
 
     branch  = AttrNode(max_g_attr, branches)
@@ -108,7 +111,7 @@ base_case_dict = {
 def __build_leaf_node__(base_case : int, df : pd.DataFrame, out_col : str, parent_df : pd.DataFrame) -> LeafNode:
     return base_case_dict[base_case](df, out_col, parent_df)
 
-def __id3_dfs__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], parent_df : pd.DataFrame) -> AttrNode | LeafNode:
+def __id3_dfs__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], parent_df : pd.DataFrame = None, save_decision_df : bool = False) -> AttrNode | LeafNode:
     base_case     = __is_base_case__(df, out_col, remaining_attrs_by_priority)
     if base_case is not None :
         return __build_leaf_node__(base_case, df, out_col, parent_df)
@@ -116,17 +119,20 @@ def __id3_dfs__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : 
     max_g_attr                  = __max_gain_attr__(df, out_col, remaining_attrs_by_priority, cats4attrs)
     remaining_attrs_by_priority = list(filter(lambda attr : attr != max_g_attr, remaining_attrs_by_priority))
     
-    branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr)
+    branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr, save_decision_df=save_decision_df)
     return branch
 
-def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> DecisionTree:
-    
+def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None, save_decision_df : bool = False) -> DecisionTree:
+
+    if df.empty:
+        raise ValueError("cannot create DecisionTree from empty DataFrame.")
+
     if attrs_by_priority is None:
         no_out_df         = df.drop(columns=[out_col])
         attrs_by_priority = no_out_df.columns
 
     cats4attrs = categorize_attrs_by_vals_from_df(df, attrs_by_priority, attrs_vals, cats4attrs)
 
-    trunk = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs)
+    trunk = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, save_decision_df=save_decision_df)
 
     return DecisionTree(trunk)
