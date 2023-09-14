@@ -1,7 +1,7 @@
-from typing         import Any
-from dataclasses    import dataclass
-from collections    import deque
-from dec_tree_utils import AttrCat, categorize_attrs_by_vals_from_df, apply_cats_to_df, gain
+from typing               import Any
+from dataclasses          import dataclass
+from collections          import deque
+from utils.dec_tree_utils import AttrCat, categorize_attrs_by_vals_from_df, apply_cats_to_df, gain
 import pandas as pd
 
 @dataclass
