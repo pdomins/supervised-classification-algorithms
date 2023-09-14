@@ -6,9 +6,9 @@ import math
 @dataclass
 class AttrCat:
     cat_label : Any
-    slct_f    : Callable[[pd.DataFrame | pd.Series], pd.Series]
+    slct_f    : Callable[[pd.DataFrame | pd.Series], pd.Series | bool]
 
-def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]) -> pd.Series:
+def cat_value_counts(X : pd.DataFrame, cats4attr : list[AttrCat]) -> pd.Series:
     value_counts = dict()
     for cat in cats4attr:
         X_v = X[cat.slct_f(X)]
@@ -16,9 +16,9 @@ def cat_value_counts(X : pd.DataFrame | pd.Series, cats4attr : list[AttrCat]) ->
         value_counts[cat.cat_label] = X_v.count()
     return pd.Series(data=value_counts, name="count")
 
-def __create_attr_cat__(cat_label : Any, df_slct_f : Callable[[pd.DataFrame], pd.Series], s_slct_f : Callable[[pd.Series], pd.Series]) -> AttrCat:
+def __create_attr_cat__(cat_label : Any, df_slct_f : Callable[[pd.DataFrame], pd.Series], s_slct_f : Callable[[pd.Series], bool]) -> AttrCat:
     
-    def slct_f(df : pd.DataFrame | pd.Series) -> pd.Series:
+    def slct_f(df : pd.DataFrame | pd.Series) -> pd.Series | bool:
         if isinstance(df, pd.DataFrame):
             return df_slct_f(df)
     
@@ -47,8 +47,8 @@ def categorize_attr(cat_defs : list[dict[str, Any]]) -> list[AttrCat]:
 def __templ_df_slct_f_by_vals__(attr : str, val : Any) -> pd.Series:
     return lambda df : df[attr] == val
         
-def __templ_s_slct_f_by_vals__(val : Any) -> pd.Series:
-    return lambda s : s == val
+def __templ_s_slct_f_by_vals__(attr : str, val : Any) -> bool:
+    return lambda s : s[attr] == val
 
 def categorize_attr_by_vals(attr : str, attr_vals : list[Any]) -> list[AttrCat]:
     cats4attr = list()
@@ -56,7 +56,7 @@ def categorize_attr_by_vals(attr : str, attr_vals : list[Any]) -> list[AttrCat]:
     for val in attr_vals:
         
         df_slct_f = __templ_df_slct_f_by_vals__(attr, val)
-        s_slct_f  = __templ_s_slct_f_by_vals__(val)
+        s_slct_f  = __templ_s_slct_f_by_vals__(attr, val)
         
         cat       = __create_attr_cat__(val, df_slct_f, s_slct_f)
         cats4attr.append(cat)

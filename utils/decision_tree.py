@@ -9,14 +9,20 @@ class AttrNode:
     values     : dict[Any, 'ValueNode']
 
 @dataclass
-class ValueNode:
-    value      : Any
-    next_level : AttrNode | 'LeafNode'
-    train_df   : pd.DataFrame = None
-
-@dataclass
 class LeafNode:
     out_label  : Any
+
+@dataclass
+class ValueNode:
+    value      : AttrCat
+    next_level : AttrNode | LeafNode
+    train_df   : pd.DataFrame = None
+
+def decide4attr(attr_node : AttrNode, sample : pd.Series) -> ValueNode:
+    for value_key in attr_node.values.keys():
+        curr_value_node = attr_node.values[value_key]
+        if curr_value_node.value.slct_f(sample):
+            return curr_value_node
 
 
 class DecisionTree:
@@ -24,9 +30,18 @@ class DecisionTree:
     def __init__(self, root : AttrNode):
         self.root = root
         
-    def predict(self, test_sample : pd.Series):
-        # TODO
-        pass
+    def predict(self, test_sample : pd.Series) -> Any:
+        curr_node         = self.root
+        predict_decisions = []
+
+        while not isinstance(curr_node, LeafNode):
+            curr_val_node = decide4attr(curr_node, test_sample)
+            curr_node     = curr_val_node.next_level
+
+            predict_decisions.append(curr_val_node.value.cat_label)
+        
+        self.__last_predict_decisions__ = predict_decisions
+        return curr_node.out_label
 
 
 def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]]) -> str:
@@ -45,11 +60,12 @@ def __build_branch__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priori
     branches = dict()
     cats_dfs_dict = apply_cats_to_df(df, cats4attrs[max_g_attr])
     for cat_key in cats_dfs_dict.keys():
+        curr_cat          = next(filter(lambda attr_cat : attr_cat.cat_label == cat_key, cats4attrs[max_g_attr]))
         curr_cat_df       = cats_dfs_dict[cat_key]
         child_branch      = __id3_dfs__(curr_cat_df, out_col, remaining_attrs_by_priority, cats4attrs, df)
         
-        value_node        = ValueNode(cat_key, child_branch) if not save_decision_df \
-                       else ValueNode(cat_key, child_branch, curr_cat_df)
+        value_node        = ValueNode(curr_cat, child_branch) if not save_decision_df \
+                       else ValueNode(curr_cat, child_branch, curr_cat_df)
         
         branches[cat_key] = value_node
 
