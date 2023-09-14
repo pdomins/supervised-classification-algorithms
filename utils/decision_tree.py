@@ -40,14 +40,17 @@ def __max_gain_attr__(df : pd.DataFrame, out_col : str, attrs_by_priority : list
 
     return max_g_attr
 
-def __build_branch__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], max_g_attr : str) -> dict[Any, 'ValueNode']:
-    branch        = dict()
+def __build_branch__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], cats4attrs : dict[str, list[AttrCat]], max_g_attr : str) -> AttrNode:
+    branches = dict()
     cats_dfs_dict = apply_cats_to_df(df, cats4attrs[max_g_attr])
     for cat_key in cats_dfs_dict.keys():
         curr_cat_df       = cats_dfs_dict[cat_key]
         child_branch      = __id3_dfs__(curr_cat_df, out_col, remaining_attrs_by_priority, cats4attrs, df)
+        
         value_node        = ValueNode(cat_key, child_branch)
-        branch[cat_key]   = value_node
+        branches[cat_key] = value_node
+
+    branch  = AttrNode(max_g_attr, branches)
     return branch
 
 def __is_base_case__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str]) -> int:
@@ -113,9 +116,8 @@ def __id3_dfs__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : 
     max_g_attr                  = __max_gain_attr__(df, out_col, remaining_attrs_by_priority, cats4attrs)
     remaining_attrs_by_priority = list(filter(lambda attr : attr != max_g_attr, remaining_attrs_by_priority))
     
-    branch     = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr)
-    attr_node  = AttrNode(max_g_attr, branch)
-    return attr_node
+    branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr)
+    return branch
 
 def id3(df : pd.DataFrame, out_col : str, attrs_by_priority : list[str] = None, attrs_vals : dict[str, list[Any]] = None, cats4attrs : dict[str, list[AttrCat]] = None) -> DecisionTree:
     
