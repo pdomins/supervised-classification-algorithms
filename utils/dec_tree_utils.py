@@ -82,6 +82,12 @@ def categorize_attrs_by_vals_from_df(df : pd.DataFrame, attrs : list[str] = None
     
     return cats4attrs
 
+def apply_cats_to_df(df : pd.DataFrame, cats4attr : list[AttrCat], deep_copy : bool = False) -> dict[Any, pd.DataFrame]:
+    cat_dfs = dict()
+    for cat in cats4attr:
+        cat_dfs[cat.cat_label] = df[cat.slct_f(df)].copy(deep=deep_copy)
+    return cat_dfs
+
 def __label_shannon_entropy__(positive_cases : int, total_cases : int) -> float:
     if positive_cases == 0:
         return 0
