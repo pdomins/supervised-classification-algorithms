@@ -20,19 +20,19 @@ def run_ej1():
     discretize_variables(df, 'Age (years)', 3)
 
     train_df, test_df = k_fold_split(df, k=3)
-    dec_tree          = id3(train_df, "Creditability")
-    predicted_column  = test_df.apply(dec_tree.predict, axis=1)
+    dec_tree = id3(train_df, "Creditability")
+    predicted_column = test_df.apply(dec_tree.predict, axis=1)
 
     test_df.insert(loc=1, column="Creditability (predicted)", value=predicted_column)
     test_df.to_csv("ej1_german_credit_prediction.csv", sep=";")
 
-    correct_predictions  = test_df[test_df['Creditability (predicted)'] == test_df['Creditability']].shape[0]
+    correct_predictions = test_df[test_df['Creditability (predicted)'] == test_df['Creditability']].shape[0]
     incorrect_prediction = test_df.shape[0] - correct_predictions
     print(train_df)
     print(test_df)
     print({
-        "test":{
-            "correct"   : correct_predictions,
-            "incorrect" : incorrect_prediction
+        "test": {
+            "correct": correct_predictions,
+            "incorrect": incorrect_prediction
         }
     })
