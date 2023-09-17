@@ -20,6 +20,12 @@ def mean_words_amount_per_rating(df: pd.DataFrame):
     print("--------------------")
 
 
+def normalize_column(column):
+    min_val = column.min()
+    max_val = column.max()
+    return (column - min_val) / (max_val - min_val)
+
+
 # def fill_missing_vals(df: pd.DataFrame):
 #
 
@@ -46,13 +52,20 @@ def run_ej2():
     df = df.dropna(subset=["wordcount", "titleSentiment", "textSentiment", "Star Rating", "sentimentValue"])
     # fill_missing_vals(df)
     print("--------------------")
-
     title_sentiment_stats(df)
     mean_words_amount_per_rating(df)
     df.drop(columns=["Review Title", "Review Text", "textSentiment"], inplace=True)
-    k = 3
+    # normalize values
+    df['wordcount'] = normalize_column(df['wordcount'])
+    # df['titleSentiment'] = df['titleSentiment'].apply(lambda x: '1' if x == 'positive' else '0')
+    # df['titleSentiment'] = normalize_column(df['titleSentiment'])
+    df['sentimentValue'] = normalize_column(df['sentimentValue'])
 
+    # k split
+    k = 3
     train_df, test_df = k_fold_split(df, k)
+
+    # kNN
     class_labels = np.array(['positive', 'negative'])
     start = 1
     stop = 42
