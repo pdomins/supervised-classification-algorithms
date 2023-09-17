@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 from utils.data_split import k_fold_split
 from utils.confusion_matrix import calculate_confusion_matrix, \
-    calculate_per_label_confusion_matrix_from_confusion_matrix, metrics
+    calculate_per_label_confusion_matrix_from_confusion_matrix, metrics, calculate_relative_confusion_matrix
 from utils.kNN import kNN
 from utils.kNN_utils import get_best_k, normalize_column
+from utils.plotter import plot_confusion_matrix
 
 
 def title_sentiment_stats(df: pd.DataFrame):
@@ -61,7 +62,7 @@ def print_results(k, conf_matrix, per_label_conf_matrix):
         print(f'Key {key}: Precision = {precision}')
 
 
-def run_ej2():
+def handle_input():
     df = pd.read_csv("./data/reviews_sentiment.csv", delimiter=';', encoding='utf-8')
     print(f"Original Length: {len(df)}")
 
@@ -80,22 +81,39 @@ def run_ej2():
 
     # normalize
     df = normalize_df(df)
+    return df
 
+
+def run_ej2():
+    df = handle_input()
     # k split
     k_fold = 4
     train_df, test_df = k_fold_split(df, k_fold)
 
-    # kNN
     to_predict = "Star Rating"
     class_labels = np.array(df[to_predict].unique())
     # kNN
 
-    k = get_best_k(train_df, test_df, to_predict, class_labels, False)  # get most precise k for dataframe
-
-    res = kNN(train_df, test_df, to_predict, k, False)
-    conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res[to_predict])
-    per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
-    print_results(k, conf_matrix, per_label_conf_matrix)
+    for k in [3, 5, 7]:
+        res = kNN(train_df, test_df, to_predict, k, False)
+        conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res[to_predict])
+        per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
+        print_results(k, conf_matrix, per_label_conf_matrix)
+        # conf_mat = calculate_relative_confusion_matrix(class_labels, res['predictions'], res[to_predict])
+        plot_confusion_matrix(conf_matrix, "Matriz de confusión", "conf_mat.png", ".0f")
 
     # weighted kNN
-    # k = get_best_k(train_df, test_df, to_predict, class_labels, True)
+    for k in [9, 11, 13]:
+        res = kNN(train_df, test_df, to_predict, k, True)
+        conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res[to_predict])
+        per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
+        print_results(k, conf_matrix, per_label_conf_matrix)
+
+
+def get_best_k_value():
+    df = handle_input()
+    to_predict = "Star Rating"
+    class_labels = np.array(df[to_predict].unique())
+
+    k = get_best_k(df, to_predict, class_labels, k_fold=4, is_weighted=True)  # get most precise k for dataframe
+    print(f"Best value for dataset is k={k}")
