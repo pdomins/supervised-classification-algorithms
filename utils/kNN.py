@@ -7,46 +7,36 @@ def euclidean_distance(point1, point2):
     return np.sqrt(np.sum((point1 - point2) ** 2))
 
 
-def record_euclidean_aggregate(df_row, to_predict_row, attr_to_predict):
-    distance = 0
-    for column_name, value in df_row.items():
-        if column_name != attr_to_predict:
-            distance += euclidean_distance(float(value), float(to_predict_row[column_name]))
-    return distance
+def calculate_distances(train_df, test_row, attr_to_predict, k):
+    distances = []
+    for idx, train_row in train_df.iterrows():
+        dist = euclidean_distance(train_row.drop(attr_to_predict), test_row.drop(attr_to_predict))
+        distances.append((idx, dist))
+
+    distances.sort(key=lambda x: x[1])
+    return distances[:k]
 
 
-def get_predictions(data_dict, is_weighted, dict_key):
+def get_predictions(distances, train_df, is_weighted, attr_to_predict):
     predictions = defaultdict(float)
-
-    for values in data_dict.values():
-        text_sentiment = values[dict_key]
-        distance = values['distance']
-
+    for idx, dist in distances:
+        text_sentiment = train_df.loc[idx, attr_to_predict]
         if is_weighted:
-            predictions[text_sentiment] = 1 / distance ** 2 if distance != 0 else 0
+            predictions[text_sentiment] += 1 / (dist + 1e-6) ** 2
         else:
             predictions[text_sentiment] += 1
-
     return max(predictions, key=lambda k: predictions[k])
 
 
-def kNN(df: pd.DataFrame, test_df: pd.DataFrame, attr_to_predict: str, k: int, is_weighted: bool = False):
-    if k > len(df):
-        print(f"k should be smaller than the total amount of points {len(df)}")
-        exit(1)
+def kNN(train_df, test_df, attr_to_predict, k, is_weighted=False):
+    if k > len(train_df):
+        raise ValueError(f"k should be smaller than the total amount of points {len(train_df)}")
 
     predictions = []
-    # for each value to predict
-    original_df = df.copy()
-    for _, to_predict_row in test_df.iterrows():
-        df = original_df.copy()
-        distances = {}
-        for idx, df_row in df.iterrows():
-            dist = record_euclidean_aggregate(df_row, to_predict_row, attr_to_predict)
-            distances[idx] = {f'{attr_to_predict}': df_row[attr_to_predict], 'distance': dist}
-        sorted_distances = dict(sorted(distances.items(), key=lambda item: item[1]['distance'], reverse=False)[
-                                :k])  # reverse=False ascending order
-        predictions.append(get_predictions(sorted_distances, is_weighted, attr_to_predict))
+    for _, test_row in test_df.iterrows():
+        distances = calculate_distances(train_df, test_row, attr_to_predict, k)
+        prediction = get_predictions(distances, train_df, is_weighted, attr_to_predict)
+        predictions.append(prediction)
 
     test_df['predictions'] = predictions
-    print(test_df)
+    return test_df

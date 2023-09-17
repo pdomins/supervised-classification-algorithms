@@ -30,5 +30,5 @@ def run_ej2():
     k = 3
 
     train_df, test_df = k_fold_split(df, k)
-    k = 10
-    kNN(train_df, test_df, "titleSentiment", k, False)
+    k = 11
+    kNN(train_df, test_df, "titleSentiment", k, True)
