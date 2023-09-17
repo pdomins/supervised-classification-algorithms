@@ -130,9 +130,9 @@ def metrics(per_label_conf_mats):
         FN = calculate_false_negatives_from_confusion_matrix(label_conf_mat, "P")
         TN = calculate_true_negatives_from_confusion_matrix(label_conf_mat, "P")
 
-        precision = TP / (TP + FP)
-        recall = TP / (TP + FN)
-        f1_score = 2 * (precision * recall) / (precision + recall)
+        precision = TP / (TP + FP) if TP != 0 else 0
+        recall = TP / (TP + FN) if TP != 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision * recall) != 0 else 0
         accuracy = (TP + TN) / (TP + TN + FP + FN)
 
         metrics_per_label[label] = {

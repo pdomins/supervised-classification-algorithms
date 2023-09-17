@@ -6,6 +6,13 @@ from utils.confusion_matrix import calculate_confusion_matrix, \
 from utils.kNN import kNN
 
 
+def title_sentiment_stats(df: pd.DataFrame):
+    value_counts = df['titleSentiment'].value_counts()
+    print("Title Sentiment")
+    print(f"positive: {value_counts['positive']}, negative: {value_counts['negative']}")
+    print("--------------------")
+
+
 def mean_words_amount_per_rating(df: pd.DataFrame):
     for rating in df["Star Rating"].unique():
         mean_word_count = df[df["Star Rating"] == rating]["wordcount"].mean()
@@ -40,24 +47,27 @@ def run_ej2():
     # fill_missing_vals(df)
     print("--------------------")
 
+    title_sentiment_stats(df)
     mean_words_amount_per_rating(df)
     df.drop(columns=["Review Title", "Review Text", "textSentiment"], inplace=True)
     k = 3
 
     train_df, test_df = k_fold_split(df, k)
     class_labels = np.array(['positive', 'negative'])
+    start = 1
+    stop = 42
+    step = 2
 
     print("kNN")
-    for k in range(1, 42, 2):
+    for k in range(start, stop, step):
         res = kNN(train_df, test_df, "titleSentiment", k, False)
-        print(res)
         conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res['titleSentiment'])
         per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
         print_results(k, conf_matrix, per_label_conf_matrix)
 
     print("--------------------")
     print("weighted kNN")
-    for k in range(1, 42, 2):
+    for k in range(start, stop, step):
         res = kNN(train_df, test_df, "titleSentiment", k, True)
         conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res['titleSentiment'])
         per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)

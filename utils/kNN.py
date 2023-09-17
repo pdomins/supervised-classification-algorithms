@@ -22,10 +22,10 @@ def get_predictions(distances, train_df, is_weighted, attr_to_predict):
     for idx, dist in distances:
         text_sentiment = train_df.loc[idx, attr_to_predict]
         if is_weighted:
-            predictions[text_sentiment] += 1 / (dist + 1e-6) ** 2
+            predictions[text_sentiment] += 1 / ((dist + 1e-6) ** 2)  ##TODO FIX ME ASAP
         else:
             predictions[text_sentiment] += 1
-    return max(predictions, key=lambda k: predictions[k])
+    return max(predictions, key=lambda k: predictions[k]) ## TODO handle draws
 
 
 def kNN(train_df, test_df, attr_to_predict, k, is_weighted=False):
