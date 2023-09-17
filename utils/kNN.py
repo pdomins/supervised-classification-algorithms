@@ -33,10 +33,11 @@ def kNN(train_df, test_df, attr_to_predict, k, is_weighted=False):
         raise ValueError(f"k should be smaller than the total amount of points {len(train_df)}")
 
     predictions = []
-    for _, test_row in test_df.iterrows():
+    test_df_copy = test_df.copy()
+    for _, test_row in test_df_copy.iterrows():
         distances = calculate_distances(train_df, test_row, attr_to_predict, k)
         prediction = get_predictions(distances, train_df, is_weighted, attr_to_predict)
         predictions.append(prediction)
 
-    test_df['predictions'] = predictions
-    return test_df
+    test_df_copy['predictions'] = predictions
+    return test_df_copy
