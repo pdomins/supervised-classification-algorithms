@@ -33,9 +33,22 @@ def normalize_df(df: pd.DataFrame):
     return df
 
 
-def handle_n_a(df: pd.DataFrame, drop: bool = True):
-    if drop:
+def set_title_sentiment(row):
+    if pd.isna(row['titleSentiment']):
+        if pd.notna(row['Star Rating']) and row['Star Rating'] >= 3:
+            return 'positive'
+        else:
+            return 'negative'
+    else:
+        return row['titleSentiment']
+
+
+def handle_n_a(df: pd.DataFrame, drop_missing_values: bool = True):
+    if drop_missing_values:
         df = df.dropna(subset=["wordcount", "titleSentiment", "textSentiment", "Star Rating", "sentimentValue"])
+    else:
+        df = df.dropna(subset=["wordcount", "textSentiment", "Star Rating", "sentimentValue"])
+        df['titleSentiment'] = df.apply(set_title_sentiment, axis=1)
     return df
 
 
@@ -60,14 +73,17 @@ def run_ej2():
     df = df.drop_duplicates()
     print(f"Length with no duplicates: {len(df)}")
 
-    df = handle_n_a(df, drop=True)
+    df = handle_n_a(df, drop_missing_values=False)
     print("--------------------")
-    title_sentiment_stats(df)
-    mean_words_amount_per_rating(df)
     df.drop(columns=["Review Title", "Review Text", "textSentiment"], inplace=True)
 
+    # stats
+    title_sentiment_stats(df)
+    mean_words_amount_per_rating(df)
+
+    # normalize
     df = normalize_df(df)
-    print(df)
+
     # k split
     k = 3
     train_df, test_df = k_fold_split(df, k)
