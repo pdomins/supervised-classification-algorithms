@@ -1,5 +1,5 @@
 from ej1_german_credit import run_ej1
-from ej2_reviews_sentiment import run_ej2, get_best_k_value
+from ej2_reviews_sentiment import run_ej2, get_best_k_value, run_ej2_normalization_test
 
 
 def main():

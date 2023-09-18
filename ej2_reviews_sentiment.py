@@ -71,14 +71,15 @@ def print_results(conf_matrix, per_label_conf_matrix):
     print(f'Standard Deviation of Precision: {precision_std}')
     print(f'Standard Deviation of Accuracy: {accuracy_std}')
 
-def handle_input():
+
+def handle_input(drop_missing_values: bool = False, normalize: bool = True):
     df = pd.read_csv("./data/reviews_sentiment.csv", delimiter=';', encoding='utf-8')
     print(f"Original Length: {len(df)}")
 
     df = df.drop_duplicates()
     print(f"Length with no duplicates: {len(df)}")
 
-    df = handle_n_a(df, drop_missing_values=False)
+    df = handle_n_a(df, drop_missing_values)
     print(f"Length after handling NaN: {len(df)}")
 
     print("--------------------")
@@ -90,12 +91,14 @@ def handle_input():
     print(df['Star Rating'].value_counts())
 
     # normalize
-    df = normalize_df(df)
+    if normalize:
+        df = normalize_df(df)
+    else:
+        df['titleSentiment'] = df['titleSentiment'].apply(lambda x: 1 if x == 'positive' else 0)
     return df
 
 
-def run_ej2():
-    df = handle_input()
+def run_knn(df: pd.DataFrame):
     # k split
     k_fold = 4
     train_df, test_df = k_fold_split(df, k_fold)
@@ -111,7 +114,8 @@ def run_ej2():
         res_df = pd.DataFrame(res)
         all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
 
-    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
+    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'],
+                                                   all_results_df[to_predict])
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     print_results(conf_mat, per_label_conf_matrix)
     plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
@@ -123,13 +127,28 @@ def run_ej2():
         res_df = pd.DataFrame(res)
         all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
 
-    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
+    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'],
+                                                   all_results_df[to_predict])
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     print_results(conf_mat, per_label_conf_matrix)
-    plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "weighted_knn_conf_mat.png", ".2f")
+
+
+def run_ej2():
+    df = handle_input(drop_missing_values=True)
+    run_knn(df)
+
+
+def run_ej2_normalization_test():
+    df_normalized = handle_input(normalize=True)
+    df_non_normalized = handle_input(normalize=False)
+
+    for df in [df_normalized, df_non_normalized]:
+        run_knn(df)
+
 
 def get_best_k_value():
-    df = handle_input()
+    df = handle_input(drop_missing_values=True)
     to_predict = "Star Rating"
     class_labels = np.array(df[to_predict].unique())
 
