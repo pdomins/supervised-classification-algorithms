@@ -5,9 +5,9 @@ import os
 
 def main():
     os.makedirs("./graphics", exist_ok=True)
-    # run_ej1()
+    run_ej1()
     # get_best_k_value() # comenten esto que tarda mil años
-    run_ej2()
+    # run_ej2()
 
 
 if __name__ == '__main__':

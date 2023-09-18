@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
+
+from utils.confusion_matrix import calculate_relative_confusion_matrix, \
+    calculate_per_label_confusion_matrix_from_confusion_matrix, metrics
 from utils.data_split import k_fold_split
 from utils.decision_tree import id3
+from utils.plotter import plot_confusion_matrix
 
 
 def discretize_variables(df: pd.DataFrame, var: str, bins_amount: int):
@@ -11,6 +15,18 @@ def discretize_variables(df: pd.DataFrame, var: str, bins_amount: int):
     bin_edges = [min_val + i * bin_width for i in range(bins_amount + 1)]
     bin_labels = [i for i in range(bins_amount)]
     df[var] = pd.cut(df[var], bins=bin_edges, labels=bin_labels, include_lowest=True)
+
+
+def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str):
+    class_labels = np.array(df[to_predict_label].unique())
+    conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label],
+                                                   df[to_predict_label])
+    per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "./graphics/ej1_conf_mat.png", ".2f")
+    metrics_result = metrics(per_label_conf_matrix)
+    for key, value in metrics_result.items():
+        precision = value['Precision']
+        print(f'Key {key}: Precision = {precision}')
 
 
 def run_ej1():
@@ -36,3 +52,4 @@ def run_ej1():
             "incorrect": incorrect_prediction
         }
     })
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted)', to_predict_label='Creditability')
