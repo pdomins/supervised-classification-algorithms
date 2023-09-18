@@ -2,6 +2,7 @@
 .idea
 .DS_Store
 *.png
+graphics/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

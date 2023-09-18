@@ -41,7 +41,7 @@ def get_best_k(df, to_predict, class_labels, k_fold, is_weighted=False):
 
         average_precision = np.mean(precisions)
         average_precisions.append([k, average_precision])
-    plot_k_values(average_precisions, f"{'weighted_' if is_weighted else ''}kNN_k_values.png")
+    plot_k_values(average_precisions, f"./graphics/{'weighted_' if is_weighted else ''}kNN_k_values.png")
     return max(average_precisions, key=lambda x: x[1])[0]
 
 

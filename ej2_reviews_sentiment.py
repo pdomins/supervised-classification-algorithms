@@ -118,7 +118,7 @@ def run_knn(df: pd.DataFrame):
                                                    all_results_df[to_predict])
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     print_results(conf_mat, per_label_conf_matrix)
-    plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "./graphics/knn_conf_mat.png", ".2f")
 
     # weighted kNN
     all_results_df = pd.DataFrame()
@@ -131,7 +131,7 @@ def run_knn(df: pd.DataFrame):
                                                    all_results_df[to_predict])
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     print_results(conf_mat, per_label_conf_matrix)
-    plot_confusion_matrix(conf_mat, "Matriz de confusión", "weighted_knn_conf_mat.png", ".2f")
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "./graphics/weighted_knn_conf_mat.png", ".2f")
 
 
 def run_ej2():
