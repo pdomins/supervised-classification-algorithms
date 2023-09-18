@@ -48,8 +48,7 @@ def handle_n_a(df: pd.DataFrame, drop_missing_values: bool = True):
     return df
 
 
-def print_results(k, conf_matrix, per_label_conf_matrix):
-    print(f"\nResults for k = {k}:")
+def print_results(conf_matrix, per_label_conf_matrix):
     print("Confusion Matrix:")
     print(conf_matrix)
 
@@ -57,10 +56,20 @@ def print_results(k, conf_matrix, per_label_conf_matrix):
     # print(per_label_conf_matrix)
 
     metrics_result = metrics(per_label_conf_matrix)
-    for key, value in metrics_result.items():
-        precision = value['Precision']
-        print(f'Key {key}: Precision = {precision}')
 
+    precision_values = [values['Precision'] for values in metrics_result.values()]
+    accuracy_values = [values['Accuracy'] for values in metrics_result.values()]
+
+    average_precision = sum(precision_values) / len(metrics_result)
+    average_accuracy = sum(accuracy_values) / len(metrics_result)
+
+    precision_std = np.std(precision_values)
+    accuracy_std = np.std(accuracy_values)
+
+    print(f'Average Precision: {average_precision}')
+    print(f'Average Accuracy: {average_accuracy}')
+    print(f'Standard Deviation of Precision: {precision_std}')
+    print(f'Standard Deviation of Accuracy: {accuracy_std}')
 
 def handle_input():
     df = pd.read_csv("./data/reviews_sentiment.csv", delimiter=';', encoding='utf-8')
@@ -103,6 +112,8 @@ def run_ej2():
         all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
 
     conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
+    per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
+    print_results(conf_mat, per_label_conf_matrix)
     plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
 
     # weighted kNN
@@ -113,8 +124,9 @@ def run_ej2():
         all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
 
     conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
-    plot_confusion_matrix(conf_mat, "Matriz de confusión", "weighted_knn_conf_mat.png", ".2f")
-
+    per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
+    print_results(conf_mat, per_label_conf_matrix)
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
 
 def get_best_k_value():
     df = handle_input()
