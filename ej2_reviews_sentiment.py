@@ -78,6 +78,7 @@ def handle_input():
     # stats
     title_sentiment_stats(df)
     mean_words_amount_per_rating(df)
+    print(df['Star Rating'].value_counts())
 
     # normalize
     df = normalize_df(df)
@@ -92,22 +93,27 @@ def run_ej2():
 
     to_predict = "Star Rating"
     class_labels = np.array(df[to_predict].unique())
-    # kNN
 
+    # kNN
+    all_results_df = pd.DataFrame()
     for k in [3, 5, 7]:
         res = kNN(train_df, test_df, to_predict, k, False)
-        conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res[to_predict])
-        per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
-        print_results(k, conf_matrix, per_label_conf_matrix)
-        # conf_mat = calculate_relative_confusion_matrix(class_labels, res['predictions'], res[to_predict])
-        plot_confusion_matrix(conf_matrix, "Matriz de confusión", "conf_mat.png", ".0f")
+
+        res_df = pd.DataFrame(res)
+        all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
+
+    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "knn_conf_mat.png", ".2f")
 
     # weighted kNN
+    all_results_df = pd.DataFrame()
     for k in [9, 11, 13]:
         res = kNN(train_df, test_df, to_predict, k, True)
-        conf_matrix = calculate_confusion_matrix(class_labels, res['predictions'], res[to_predict])
-        per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_matrix)
-        print_results(k, conf_matrix, per_label_conf_matrix)
+        res_df = pd.DataFrame(res)
+        all_results_df = pd.concat([all_results_df, res_df], ignore_index=True)
+
+    conf_mat = calculate_relative_confusion_matrix(class_labels, all_results_df['predictions'], all_results_df[to_predict])
+    plot_confusion_matrix(conf_mat, "Matriz de confusión", "weighted_knn_conf_mat.png", ".2f")
 
 
 def get_best_k_value():
