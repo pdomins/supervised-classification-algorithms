@@ -1,7 +1,7 @@
 from typing               import Any
-from dataclasses          import dataclass
+from dataclasses          import dataclass, replace
 from collections          import deque
-from utils.dec_tree_utils import AttrCat, categorize_attrs_by_vals_from_df, apply_cats_to_df, gain, pre_pruning_from_dict, PrePruning
+from utils.dec_tree_utils import AttrCat, categorize_attrs_by_vals_from_df, apply_cats_to_df, gain, pre_pruning_from_dict, PrePruning, DecisionTreeProperties
 import pandas as pd
 
 @dataclass
@@ -28,9 +28,11 @@ def decide4attr(attr_node : AttrNode, sample : pd.Series) -> ValueNode:
 
 class DecisionTree:
 
-    def __init__(self, root : AttrNode, out_attr : str):
+    def __init__(self, root : AttrNode, out_attr : str, tree_props : DecisionTreeProperties = None):
         self.root     = root
         self.out_attr = out_attr
+        if tree_props is not None:
+            self.tree_props = replace(tree_props)
         
     def predict(self, test_sample : pd.Series) -> Any:
         curr_node         = self.root
@@ -102,6 +104,7 @@ def __build_branch__(df               : pd.DataFrame,
                      cats4attrs       : dict[str, list[AttrCat]], 
                      max_g_attr       : str, 
                      depth            : int,
+                     tree_props       : DecisionTreeProperties,
                      pre_pruning      : PrePruning,
                      save_decision_df : bool = False) -> AttrNode:
     branches = dict()
@@ -109,14 +112,16 @@ def __build_branch__(df               : pd.DataFrame,
     for cat_key in cats_dfs_dict.keys():
         curr_cat          = next(filter(lambda attr_cat : attr_cat.cat_label == cat_key, cats4attrs[max_g_attr]))
         curr_cat_df       = cats_dfs_dict[cat_key]
-        child_branch      = __id3_dfs__(curr_cat_df, out_col, remaining_attrs_by_priority, cats4attrs, depth + 1, pre_pruning, df, save_decision_df=save_decision_df)
+        child_branch      = __id3_dfs__(curr_cat_df, out_col, remaining_attrs_by_priority, cats4attrs, depth + 1, tree_props, pre_pruning, df, save_decision_df=save_decision_df)
         
         value_node        = ValueNode(curr_cat, child_branch) if not save_decision_df \
                        else ValueNode(curr_cat, child_branch, curr_cat_df)
         
         branches[cat_key] = value_node
+        tree_props.val_node_count += 1
 
-    branch  = AttrNode(max_g_attr, branches)
+    branch = AttrNode(max_g_attr, branches)
+    tree_props.attr_node_count += 1
     return branch
 
 def __is_base_case__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priority : list[str], depth : int, pre_prunning : PrePruning) -> int:
@@ -135,8 +140,8 @@ def __is_base_case__(df : pd.DataFrame, out_col : str, remaining_attrs_by_priori
     if remaining_attrs_count == 0:
         return 3
     
-    # Base case #4 : Max depth is set and we've exceeded it
-    if pre_prunning.max_depth is not None and depth > pre_prunning.max_depth:
+    # Base case #4 : Max depth is set and we will exceeded it
+    if pre_prunning.max_depth is not None and depth >= pre_prunning.max_depth:
         return 4
     
     return None
@@ -169,7 +174,7 @@ def __build_leaf_node_for_no_attrs_remain__(df : pd.DataFrame, out_col : str):
     label_mode = __get_mode_out_label__(df, out_col)
     return LeafNode(label_mode)
 
-# Base case #4 : Max depth is set and we've exceeded it
+# Base case #4 : Max depth is set and we will exceeded it
 def __build_leaf_node_for_max_depth_exceeded__(df : pd.DataFrame, out_col : str):
     label_mode = __get_mode_out_label__(df, out_col)
     return LeafNode(label_mode)
@@ -189,17 +194,20 @@ def __id3_dfs__(df      : pd.DataFrame,
                 remaining_attrs_by_priority : list[str], 
                 cats4attrs       : dict[str, list[AttrCat]], 
                 depth            : int,
+                tree_props       : DecisionTreeProperties,
                 pre_pruning      : PrePruning,
                 parent_df        : pd.DataFrame = None, 
                 save_decision_df : bool = False) -> AttrNode | LeafNode:
     base_case = __is_base_case__(df, out_col, remaining_attrs_by_priority, depth, pre_pruning)
     if base_case is not None :
-        return __build_leaf_node__(base_case, df, out_col, parent_df)
+        leaf_node = __build_leaf_node__(base_case, df, out_col, parent_df)
+        tree_props.leaf_node_count += 1
+        return leaf_node
 
     max_g_attr                  = __max_gain_attr__(df, out_col, remaining_attrs_by_priority, cats4attrs)
     remaining_attrs_by_priority = list(filter(lambda attr : attr != max_g_attr, remaining_attrs_by_priority))
     
-    branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr, depth, pre_pruning, save_decision_df=save_decision_df)
+    branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr, depth, tree_props, pre_pruning, save_decision_df=save_decision_df)
     return branch
 
 def id3(df                : pd.DataFrame, 
@@ -224,6 +232,8 @@ def id3(df                : pd.DataFrame,
 
     pre_pruning_data = pre_pruning_from_dict(pre_pruning)
 
-    root = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, 1, pre_pruning_data, save_decision_df=save_decision_df)
+    tree_props = DecisionTreeProperties(depth=0, attr_node_count=0, val_node_count=0, leaf_node_count=0)
 
-    return DecisionTree(root, out_col)
+    root = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, 0, tree_props, pre_pruning_data, save_decision_df=save_decision_df)
+
+    return DecisionTree(root, out_col, tree_props)

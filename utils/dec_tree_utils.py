@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Any
 import pandas as pd
 import math
@@ -189,3 +189,13 @@ def pre_pruning_from_dict(pre_pruning_dict : dict[str, Any]) -> PrePruning:
             pre_pruning_criteria[criteria](pre_pruning, pre_pruning_dict[criteria])
 
     return pre_pruning
+
+@dataclass
+class DecisionTreeProperties:
+    depth           : int
+    attr_node_count : int
+    val_node_count  : int
+    leaf_node_count : int
+
+    def node_count(self) -> int:
+        return self.attr_node_count + self.val_node_count + self.leaf_node_count
