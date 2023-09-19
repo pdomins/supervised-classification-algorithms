@@ -206,6 +206,7 @@ def __id3_dfs__(df      : pd.DataFrame,
 
     max_g_attr                  = __max_gain_attr__(df, out_col, remaining_attrs_by_priority, cats4attrs)
     remaining_attrs_by_priority = list(filter(lambda attr : attr != max_g_attr, remaining_attrs_by_priority))
+    tree_props.attrs.add(max_g_attr)
     
     branch = __build_branch__(df, out_col, remaining_attrs_by_priority, cats4attrs, max_g_attr, depth, tree_props, pre_pruning, save_decision_df=save_decision_df)
     return branch

@@ -196,6 +196,10 @@ class DecisionTreeProperties:
     attr_node_count : int
     val_node_count  : int
     leaf_node_count : int
+    attrs           : set[str] = field(init=True, default_factory=set)
 
     def node_count(self) -> int:
         return self.attr_node_count + self.val_node_count + self.leaf_node_count
+    
+    def attr_count(self) -> int:
+        return len(self.attrs)
