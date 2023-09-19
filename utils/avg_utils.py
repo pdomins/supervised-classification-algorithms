@@ -10,7 +10,5 @@ def __calculate_average_string(class_predictions: list):
 
 def calculate_average(predictions: list):
     if isinstance(predictions[0], (int, float)):
-        numeric_sum = sum(predictions)
-        average_numeric = numeric_sum / len(predictions)
-        return average_numeric
+        predictions = list(map(str, predictions))
     return __calculate_average_string(predictions)
