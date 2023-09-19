@@ -168,3 +168,24 @@ def gain(S: pd.DataFrame, out_label: str, attr: str = None, attr_vals: list[str]
 
     attr_gain = __attr_gain__(S, cats4attr, out_label, S_count)
     return h_S - attr_gain
+
+@dataclass
+class PrePruning:
+    max_depth : int = None
+
+
+def pre_pruning_from_dict(pre_pruning_dict : dict[str, Any]) -> PrePruning:
+    pre_pruning = PrePruning()
+
+    def set_max_depth(pre_pruning : PrePruning, max_depth : int):
+        pre_pruning.max_depth = max_depth
+
+    pre_pruning_criteria = { 
+        "max_depth" : set_max_depth
+    }
+
+    for criteria in pre_pruning_criteria.keys():
+        if criteria in pre_pruning_dict:
+            pre_pruning_criteria[criteria](pre_pruning, pre_pruning_dict[criteria])
+
+    return pre_pruning
