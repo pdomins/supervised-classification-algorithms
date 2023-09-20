@@ -83,8 +83,8 @@ def categorize_attrs_by_vals_from_df(df: pd.DataFrame, attrs: list[str] = None, 
 
     for attr in attrs:
         if attr not in cats4attrs:
-            attr_vals = df[attr].unique() if not attrs_vals_provided or attr not in attr_vals \
-                else attr_vals[attr]
+            attr_vals = df[attr].unique() if not attrs_vals_provided or attr not in attrs_vals \
+                else attrs_vals[attr]
 
             cats4attrs[attr] = categorize_attr_by_vals(attr, attr_vals)
 
