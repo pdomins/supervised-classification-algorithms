@@ -202,6 +202,7 @@ def __id3_dfs__(df      : pd.DataFrame,
     if base_case is not None :
         leaf_node = __build_leaf_node__(base_case, df, out_col, parent_df)
         tree_props.leaf_node_count += 1
+        tree_props.depth = max(tree_props.depth, depth + 1)
         return leaf_node
 
     max_g_attr                  = __max_gain_attr__(df, out_col, remaining_attrs_by_priority, cats4attrs)
@@ -238,3 +239,50 @@ def id3(df                : pd.DataFrame,
     root = __id3_dfs__(df, out_col, attrs_by_priority, cats4attrs, 0, tree_props, pre_pruning_data, save_decision_df=save_decision_df)
 
     return DecisionTree(root, out_col, tree_props)
+
+def decision_trees_over_possible_depths(
+        df                : pd.DataFrame, 
+        out_col           : str, 
+        depth_limit       : tuple[int, int] = None, 
+        attrs_by_priority : list[str] = None, 
+        attrs_vals        : dict[str, list[Any]] = None, 
+        cats4attrs        : dict[str, list[AttrCat]] = None, 
+        save_decision_df  : bool = False,
+        pre_pruning       : dict[str, Any] = None) -> dict[int, DecisionTree]:
+    
+    if pre_pruning is not None:
+        pre_pruning = pre_pruning.copy()
+        pre_pruning.pop("max_depth", None)
+    else:
+        pre_pruning = dict()
+
+    min_depth = 0
+    max_depth = None
+
+    if depth_limit is not None:
+        min_depth = depth_limit[0] if depth_limit[0] is not None \
+            else    0
+        max_depth = depth_limit[1]
+
+    if max_depth is not None and min_depth > max_depth:
+        return []
+    
+    trees_by_depth = dict()
+    
+    if max_depth is None:
+        max_depth_dec_tree = id3(df, out_col, attrs_by_priority, attrs_vals, cats4attrs, save_decision_df, pre_pruning)
+        max_depth = max_depth_dec_tree.tree_props.depth
+        dec_tree_node_count = max_depth_dec_tree.tree_props.val_node_count
+        trees_by_depth[dec_tree_node_count] = max_depth_dec_tree
+
+    print(min_depth, max_depth)
+    for depth in range(max_depth-1, min_depth-1, -1):
+        print(depth)
+        pre_pruning["max_depth"] = depth
+        dec_tree = id3(df, out_col, attrs_by_priority, attrs_vals, cats4attrs, save_decision_df, pre_pruning)
+
+        dec_tree_node_count = dec_tree.tree_props.val_node_count
+        if dec_tree_node_count not in trees_by_depth:
+            trees_by_depth[dec_tree_node_count] = dec_tree
+    
+    return trees_by_depth

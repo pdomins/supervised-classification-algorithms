@@ -5,9 +5,10 @@ from matplotlib import pyplot as plt
 from utils.confusion_matrix import calculate_relative_confusion_matrix, \
     calculate_per_label_confusion_matrix_from_confusion_matrix, metrics
 from utils.data_split import k_fold_split
-from utils.decision_tree import id3
-from utils.plotter import plot_confusion_matrix
+from utils.decision_tree import id3, decision_trees_over_possible_depths
+from utils.plotter import plot_confusion_matrix, plot_multiple_dicts
 from utils.random_forest import RandomForest
+from utils.precision_curve import precisions_over_possible_depth
 
 
 
@@ -66,7 +67,15 @@ def run_ej1_tree(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFr
         }
     })
 
-    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png", possible_out_values=list(df['Creditability'].unique()))
+    possible_out_labels = list(df['Creditability'].unique())
+
+    attrs_vals = dict()
+    for column in df.columns:
+        attrs_vals[column] = list(df[column].unique())
+
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png", possible_out_values=possible_out_labels)
+    precision_by_label = precisions_over_possible_depth(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label, "Precisión vs. cantidad de nodos", "Cantidad de nodos", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="precision_over_node.png")
 
 
 
