@@ -9,7 +9,7 @@ from utils.data_split import k_fold_split
 from utils.decision_tree import id3, decision_trees_over_possible_depths
 from utils.plotter import plot_confusion_matrix, plot_multiple_dicts
 from utils.random_forest import RandomForest
-from utils.precision_curve import precisions_over_possible_depth, precisions_over_possible_depth_forest
+from utils.precision_curve import precisions_over_possible_depth, precisions_over_possible_depth_forest, precisions_over_count_forest
 
 
 
@@ -114,11 +114,20 @@ def forest_precision_node_count(df : pd.DataFrame, train_df : pd.DataFrame, test
         attrs_vals[column] = list(df[column].unique())
     possible_out_labels = df['Creditability'].unique()
     
+    precision_by_label_train = precisions_over_count_forest(train_df, train_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label_train, "Precisión vs. cantidad de nodos en Train Set", "Cantidad de nodos", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_nodecount_rf_train.png", ylim=(-0.05, 1.05))
+
+    precision_by_label_test = precisions_over_count_forest(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label_test, "Precisión vs. cantidad de nodos en Test Set", "Cantidad de nodos", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_nodecount_rf_test.png", ylim=(-0.05, 1.05))
+
     precision_by_label_train = precisions_over_possible_depth_forest(train_df, train_df, possible_out_labels, "Creditability", attrs_vals)
-    plot_multiple_dicts(precision_by_label_train, "Precisión vs. profundidad en Train Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_node_rf_train.png")
+    plot_multiple_dicts(precision_by_label_train, "Precisión vs. profundidad en Train Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_depth_rf_train.png", ylim=(-0.05, 1.05))
 
     precision_by_label_test = precisions_over_possible_depth_forest(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
-    plot_multiple_dicts(precision_by_label_test, "Precisión vs. profundidad en Test Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_node_rf_test.png")
+    plot_multiple_dicts(precision_by_label_test, "Precisión vs. profundidad en Test Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_depth_rf_test.png", ylim=(-0.05, 1.05))
+
+
+
 
 
 
