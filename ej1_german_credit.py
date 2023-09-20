@@ -9,7 +9,7 @@ from utils.data_split import k_fold_split
 from utils.decision_tree import id3, decision_trees_over_possible_depths
 from utils.plotter import plot_confusion_matrix, plot_multiple_dicts
 from utils.random_forest import RandomForest
-from utils.precision_curve import precisions_over_possible_depth
+from utils.precision_curve import precisions_over_possible_depth, precisions_over_possible_depth_forest
 
 
 
