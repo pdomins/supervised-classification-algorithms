@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from pprint import pprint
+from matplotlib import pyplot as plt
 
 from utils.confusion_matrix import calculate_relative_confusion_matrix, \
     calculate_per_label_confusion_matrix_from_confusion_matrix, metrics
@@ -20,30 +20,33 @@ def discretize_variables(df: pd.DataFrame, var: str, bins_amount: int):
     df[var] = pd.cut(df[var], bins=bin_edges, labels=bin_labels, include_lowest=True)
 
 
-def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str):
+def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str, plot_matrix : bool = True):
     class_labels = np.array(df[to_predict_label].unique())
     conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label],
                                                    df[to_predict_label])
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
-    plot_confusion_matrix(conf_mat, "Matriz de confusión", output_filename, ".2f")
+    if (plot_matrix):
+        plot_confusion_matrix(conf_mat, "Matriz de confusión", output_filename, ".2f")
     metrics_result = metrics(per_label_conf_matrix)
     for key, value in metrics_result.items():
         precision = value['Precision']
-        print(f'Key {key}: Precision = {precision}')
-        # print(f'{"Devuelve" if (key == 1) else "No devuelve"}: Precision = {precision}')
+        print(f'{"Devuelve" if (key == 1) else "No devuelve"}: Precision = {precision}')
+        accuracy = value['Accuracy']
+    print('\n')
+    return accuracy
 
 
-def split_df(df : pd.DataFrame):
+def split_df(df : pd.DataFrame, use_seed : bool = False):
+    random_state = None
+    if (use_seed):
+        random_state = np.random.default_rng(seed=42)
     discretize_variables(df, 'Credit Amount', 5)
     discretize_variables(df, 'Duration of Credit (month)', 4)
     discretize_variables(df, 'Age (years)', 3)
-    return k_fold_split(df, k=3)
+    return k_fold_split(df, k=3, random_state=random_state)
 
 
-def run_ej1_tree():
-    df = pd.read_csv("./data/german_credit.csv", delimiter=',', encoding='utf-8')
-    train_df, test_df = split_df(df)
-
+def run_ej1_tree(train_df : pd.DataFrame, test_df : pd.DataFrame):
     dec_tree = id3(train_df, "Creditability")
     predicted_column_dt = test_df.apply(dec_tree.predict, axis=1)
 
@@ -53,8 +56,6 @@ def run_ej1_tree():
     correct_predictions_dt = test_df[test_df['Creditability (predicted by DT)'] == test_df['Creditability']].shape[0]
     incorrect_prediction_dt = test_df.shape[0] - correct_predictions_dt
 
-    print(train_df)
-    print(test_df)
     print({
         "test decision tree": {
             "correct": correct_predictions_dt,
@@ -66,18 +67,12 @@ def run_ej1_tree():
 
 
 
-def run_ej1_forest():
-    df = pd.read_csv("./data/german_credit.csv", delimiter=',', encoding='utf-8')
-    train_df, test_df = split_df(df)
-
+def run_ej1_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame):
     attrs_vals = dict()
     for column in df.columns:
         attrs_vals[column] = list(df[column].unique())
 
-
-    random_forest = RandomForest(train_df, bag_count=1, sample_size=10, attrs_vals=attrs_vals)
-    # random_forest.print()
-    # print("\n-------------------------------------------------------------------------\n")
+    random_forest = RandomForest(train_df, bag_count=100, sample_size=800, attrs_vals=attrs_vals)
     
     predicted_column_rf = test_df.apply(random_forest.predict, axis=1)
 
@@ -88,8 +83,6 @@ def run_ej1_forest():
     correct_predictions_rf = test_df[test_df['Creditability (predicted by RF)'] == test_df['Creditability']].shape[0]
     incorrect_prediction_rf = test_df.shape[0] - correct_predictions_rf
     
-    print(train_df)
-    print(test_df)
     print({
         "test random forest": {
             "correct": correct_predictions_rf,
@@ -101,27 +94,49 @@ def run_ej1_forest():
 
 
 
-
-def benchmark_forest():
-    df = pd.read_csv("./data/german_credit.csv", delimiter=',', encoding='utf-8')
-    train_df, test_df = split_df(df)
+def benchmark_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame):
 
     attrs_vals = dict()
     for column in df.columns:
         attrs_vals[column] = list(df[column].unique())
 
-    forests : dict[RandomForest] = {}
-    predictions = {}
+    sample_sizes = []
+    bag_counts = []
+    accuracy = []
 
-    for i in range(1, 2):
-        curr_forest : RandomForest = RandomForest(train_df, bag_count=i, sample_size=10, attrs_vals=attrs_vals)
-        predictions[i] = test_df.apply(curr_forest.predict, axis=1)
-        forests[i] = curr_forest
-        
+    for i in range(10):
+        curr_bag_count = (i+1)*10
+        for j in range(15):
+            curr_sample_size = (j+1)*100
+            sample_sizes.append(curr_sample_size)
+            bag_counts.append(curr_bag_count)
+            curr_forest = RandomForest(train_df, bag_count=curr_bag_count, sample_size=curr_sample_size, attrs_vals=attrs_vals)
+            predicted_column = test_df.apply(curr_forest.predict, axis=1)
+            curr_column_name = f"Creditability (predicted by RF{i}b{j}s)"
+            test_df.insert(loc=1, column=curr_column_name, value=predicted_column)
+            curr_accuracy = generate_confusion_matrix(test_df, predictions_label=curr_column_name, to_predict_label='Creditability', output_filename="", plot_matrix=False)
+            accuracy.append(curr_accuracy)
 
-
+    plot_df = pd.DataFrame({'x': sample_sizes, 'y': accuracy, 'z': bag_counts})
+    groups = plot_df.groupby('z')
+    for name, group in groups:
+        plt.plot(group.x, group.y, marker='o', linestyle='', markersize=12, label=name)
+    plt.legend(title="Bag Count")
+    plt.title('Sample size vs. Accuracy by Bag Count')
+    plt.xlabel('Sample size')
+    plt.ylabel('Accuracy')
+    plt.grid(True)
+    plt.savefig(f"./graphics/rf_benchmark.png", bbox_inches='tight', dpi=1200)
 
 
 def run_ej1():
-    # return benchmark_forest()
-    return run_ej1_forest()
+    df = pd.read_csv("./data/german_credit.csv", delimiter=',', encoding='utf-8')
+    train_df, test_df = split_df(df, use_seed=True)
+    benchmark_forest(df, train_df, test_df)
+    # print("DATASETS -------------------------------------------------------------------------------")
+    # print(train_df)
+    # print(test_df)
+    # print("DECISION TREE --------------------------------------------------------------------------")
+    # run_ej1_tree(train_df, test_df)
+    # print("RANDOM FOREST --------------------------------------------------------------------------")
+    # run_ej1_forest(df, train_df, test_df)
