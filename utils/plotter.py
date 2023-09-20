@@ -68,7 +68,7 @@ def plot_multiple_roc_fromm_positive_rates(positive_rates_list: list[list[dict[s
     else:
         plt.show()
 
-def plot_multiple_dicts(values_dict : dict[Any, dict[Any, Any]], title : str, xlabel : str, ylabel : str, label_mapping : dict[Any, str] = None, save_file : str = None) -> None:
+def plot_multiple_dicts(values_dict : dict[Any, dict[Any, Any]], title : str, xlabel : str, ylabel : str, ylim : tuple[int, int] = None, label_mapping : dict[Any, str] = None, save_file : str = None) -> None:
     plt.figure()
     plt.grid(True)
     for label in values_dict.keys():
@@ -77,6 +77,8 @@ def plot_multiple_dicts(values_dict : dict[Any, dict[Any, Any]], title : str, xl
         X = values_dict[label].keys()
         Y = values_dict[label].values()
         plt.plot(X, Y, label=plot_label, marker='o')
+    if ylim is not None:
+        plt.ylim(ylim)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+import json
 
 from utils.confusion_matrix import calculate_relative_confusion_matrix, \
     calculate_per_label_confusion_matrix_from_confusion_matrix, metrics
@@ -75,7 +76,9 @@ def run_ej1_tree(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFr
 
     generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png", possible_out_values=possible_out_labels)
     precision_by_label = precisions_over_possible_depth(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
-    plot_multiple_dicts(precision_by_label, "Precisión vs. cantidad de nodos", "Cantidad de nodos", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="precision_over_node.png")
+    precision_by_label_train = precisions_over_possible_depth(train_df, train_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label, "Precisión vs. cantidad de nodos (test)", "Cantidad de nodos", "Precisión", ylim=(-0.05, 1.05), label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="precision_over_node_test.png")
+    plot_multiple_dicts(precision_by_label_train, "Precisión vs. cantidad de nodos (train)", "Cantidad de nodos", "Precisión", ylim=(-0.05, 1.05), label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="precision_over_node_train.png")
 
 
 
