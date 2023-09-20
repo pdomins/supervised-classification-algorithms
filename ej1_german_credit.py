@@ -67,7 +67,7 @@ def run_ej1_tree(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFr
         }
     })
 
-    possible_out_labels = list(df['Creditability'].unique())
+    possible_out_labels = df['Creditability'].unique()
 
     attrs_vals = dict()
     for column in df.columns:
@@ -131,6 +131,30 @@ def benchmark_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.Da
 
     plot_df = pd.DataFrame({'x': sample_sizes, 'y': accuracy, 'z': bag_counts})
     groups = plot_df.groupby('z')
+    plt.figure()
+    for name, group in groups:
+        plt.plot(group.x, group.y, marker='o', linestyle='-', markersize=12, label=name)
+    plt.legend(title="Bag Count")
+    plt.title('Sample size vs. Accuracy by Bag Count')
+    plt.xlabel('Sample size')
+    plt.ylabel('Accuracy')
+    plt.ylim((-0.05, 1.05))
+    plt.grid(True)
+    plt.savefig(f"./graphics/rf_benchmark.png", bbox_inches='tight', dpi=1200)
+
+    plot_df = pd.DataFrame({'x': sample_sizes, 'y': accuracy, 'z': bag_counts})
+    groups = plot_df.groupby('z')
+    plt.figure()
+    for name, group in groups:
+        plt.plot(group.x, group.y, marker='o', linestyle='-', markersize=12, label=name)
+    plt.legend(title="Bag Count")
+    plt.title('Sample size vs. Accuracy by Bag Count')
+    plt.xlabel('Sample size')
+    plt.ylabel('Accuracy')
+    plt.grid(True)
+    plt.savefig(f"./graphics/rf_benchmark (1).png", bbox_inches='tight', dpi=1200)
+
+    plt.figure()
     for name, group in groups:
         plt.plot(group.x, group.y, marker='o', linestyle='', markersize=12, label=name)
     plt.legend(title="Bag Count")
@@ -138,7 +162,18 @@ def benchmark_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.Da
     plt.xlabel('Sample size')
     plt.ylabel('Accuracy')
     plt.grid(True)
-    plt.savefig(f"./graphics/rf_benchmark.png", bbox_inches='tight', dpi=1200)
+    plt.savefig(f"./graphics/rf_benchmark (2).png", bbox_inches='tight', dpi=1200)
+
+    plt.figure()
+    for name, group in groups:
+        plt.plot(group.x, group.y, marker='o', linestyle='', markersize=12, label=name)
+    plt.legend(title="Bag Count")
+    plt.title('Sample size vs. Accuracy by Bag Count')
+    plt.xlabel('Sample size')
+    plt.ylabel('Accuracy')
+    plt.ylim((-0.05, 1.05))
+    plt.grid(True)
+    plt.savefig(f"./graphics/rf_benchmark (3).png", bbox_inches='tight', dpi=1200)
 
     max_value = max(accuracy)
     best_idx = accuracy.index(max_value)
