@@ -20,10 +20,13 @@ def discretize_variables(df: pd.DataFrame, var: str, bins_amount: int):
     df[var] = pd.cut(df[var], bins=bin_edges, labels=bin_labels, include_lowest=True)
 
 
-def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str):
-    class_labels = np.array(df[to_predict_label].unique())
-    conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label],
-                                                   df[to_predict_label])
+def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str, possible_out_values : list[str] = None):
+    if possible_out_values is not None:
+        class_labels = np.array(possible_out_values)
+    else:
+        class_labels = np.array(df[to_predict_label].unique())
+    conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label].to_dict(),
+                                                   df[to_predict_label].to_dict())
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     plot_confusion_matrix(conf_mat, "Matriz de confusión", output_filename, ".2f")
     metrics_result = metrics(per_label_conf_matrix)
@@ -62,7 +65,7 @@ def run_ej1_tree():
         }
     })
 
-    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png")
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png", possible_out_values=list(df['Creditability'].unique()))
 
 
 
@@ -97,7 +100,7 @@ def run_ej1_forest():
         }
     })
 
-    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by RF)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_rf.png")
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by RF)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_rf.png", possible_out_values=list(df['Creditability'].unique()))
 
 
 
