@@ -110,8 +110,13 @@ def forest_precision_node_count(df : pd.DataFrame, train_df : pd.DataFrame, test
     for column in df.columns:
         attrs_vals[column] = list(df[column].unique())
     possible_out_labels = df['Creditability'].unique()
-    precision_by_label = precisions_over_possible_depth_forest(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
-    plot_multiple_dicts(precision_by_label, "Precisión vs. cantidad de nodos", "Cantidad de nodos", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_node_rf.png")
+    
+    precision_by_label_train = precisions_over_possible_depth_forest(train_df, train_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label_train, "Precisión vs. profundidad en Train Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_node_rf_train.png")
+
+    precision_by_label_test = precisions_over_possible_depth_forest(train_df, test_df, possible_out_labels, "Creditability", attrs_vals)
+    plot_multiple_dicts(precision_by_label_test, "Precisión vs. profundidad en Test Set", "Profundidad", "Precisión", label_mapping={0: "No otorga", 1 : "Otorga"}, save_file="./graphics/precision_over_node_rf_test.png")
+
 
 
 def benchmark_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame):
