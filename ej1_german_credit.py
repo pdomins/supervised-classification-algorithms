@@ -70,12 +70,12 @@ def run_ej1_tree(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFr
 
 
 
-def run_ej1_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame):
+def run_ej1_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame, bag_count : int, sample_size : int):
     attrs_vals = dict()
     for column in df.columns:
         attrs_vals[column] = list(df[column].unique())
 
-    random_forest = RandomForest(train_df, bag_count=100, sample_size=800, attrs_vals=attrs_vals)
+    random_forest = RandomForest(train_df, bag_count=bag_count, sample_size=sample_size, attrs_vals=attrs_vals)
     
     predicted_column_rf = test_df.apply(random_forest.predict, axis=1)
 
@@ -131,15 +131,22 @@ def benchmark_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.Da
     plt.grid(True)
     plt.savefig(f"./graphics/rf_benchmark.png", bbox_inches='tight', dpi=1200)
 
+    max_value = max(accuracy)
+    best_idx = accuracy.index(max_value)
+    best_bag_count = bag_counts[best_idx]
+    best_sample_size = sample_sizes[best_idx]
+
+    return best_bag_count, best_sample_size
+
 
 def run_ej1():
     df = pd.read_csv("./data/german_credit.csv", delimiter=',', encoding='utf-8')
     train_df, test_df = split_df(df, use_seed=True)
-    benchmark_forest(df, train_df, test_df)
-    # print("DATASETS -------------------------------------------------------------------------------")
-    # print(train_df)
-    # print(test_df)
-    # print("DECISION TREE --------------------------------------------------------------------------")
-    # run_ej1_tree(df, train_df, test_df)
-    # print("RANDOM FOREST --------------------------------------------------------------------------")
-    # run_ej1_forest(df, train_df, test_df)
+    best_bag_count, best_sample_size = benchmark_forest(df, train_df, test_df)
+    print("DATASETS -------------------------------------------------------------------------------")
+    print(train_df)
+    print(test_df)
+    print("DECISION TREE --------------------------------------------------------------------------")
+    run_ej1_tree(df, train_df, test_df)
+    print("RANDOM FOREST --------------------------------------------------------------------------")
+    run_ej1_forest(df, train_df, test_df, best_bag_count, best_sample_size)
