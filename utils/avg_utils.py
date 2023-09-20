@@ -9,6 +9,8 @@ def __calculate_average_string(class_predictions: list):
 
 
 def calculate_average(predictions: list):
-    if isinstance(predictions[0], (int, float)):
+    if isinstance(predictions[0], int):
         predictions = list(map(str, predictions))
+        most_common_class = __calculate_average_string(predictions)
+        return int(most_common_class)
     return __calculate_average_string(predictions)
