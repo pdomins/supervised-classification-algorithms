@@ -37,12 +37,7 @@ def split_df(df : pd.DataFrame):
     discretize_variables(df, 'Credit Amount', 5)
     discretize_variables(df, 'Duration of Credit (month)', 4)
     discretize_variables(df, 'Age (years)', 3)
-    train_df, test_df = k_fold_split(df, k=3)
-    return {
-        'train_df': train_df,
-        'test_df': test_df
-    }
-
+    return k_fold_split(df, k=3)
 
 
 def run_ej1_tree():
