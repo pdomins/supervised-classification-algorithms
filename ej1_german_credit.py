@@ -20,10 +20,13 @@ def discretize_variables(df: pd.DataFrame, var: str, bins_amount: int):
     df[var] = pd.cut(df[var], bins=bin_edges, labels=bin_labels, include_lowest=True)
 
 
-def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str, plot_matrix : bool = True):
-    class_labels = np.array(df[to_predict_label].unique())
-    conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label],
-                                                   df[to_predict_label])
+def generate_confusion_matrix(df: pd.DataFrame, predictions_label: str, to_predict_label: str, output_filename: str, possible_out_values : list[str] = None, plot_matrix : bool = True):
+    if possible_out_values is not None:
+        class_labels = np.array(possible_out_values)
+    else:
+        class_labels = np.array(df[to_predict_label].unique())
+    conf_mat = calculate_relative_confusion_matrix(class_labels, df[predictions_label].to_dict(),
+                                                   df[to_predict_label].to_dict())
     per_label_conf_matrix = calculate_per_label_confusion_matrix_from_confusion_matrix(conf_mat)
     if (plot_matrix):
         plot_confusion_matrix(conf_mat, "Matriz de confusión", output_filename, ".2f")
@@ -46,7 +49,7 @@ def split_df(df : pd.DataFrame, use_seed : bool = False):
     return k_fold_split(df, k=3, random_state=random_state)
 
 
-def run_ej1_tree(train_df : pd.DataFrame, test_df : pd.DataFrame):
+def run_ej1_tree(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.DataFrame):
     dec_tree = id3(train_df, "Creditability")
     predicted_column_dt = test_df.apply(dec_tree.predict, axis=1)
 
@@ -63,7 +66,7 @@ def run_ej1_tree(train_df : pd.DataFrame, test_df : pd.DataFrame):
         }
     })
 
-    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png")
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by DT)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_dt.png", possible_out_values=list(df['Creditability'].unique()))
 
 
 
@@ -90,7 +93,7 @@ def run_ej1_forest(df : pd.DataFrame, train_df : pd.DataFrame, test_df : pd.Data
         }
     })
 
-    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by RF)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_rf.png")
+    generate_confusion_matrix(test_df, predictions_label='Creditability (predicted by RF)', to_predict_label='Creditability', output_filename="./graphics/ej1_conf_mat_rf.png", possible_out_values=list(df['Creditability'].unique()))
 
 
 
@@ -137,6 +140,6 @@ def run_ej1():
     # print(train_df)
     # print(test_df)
     # print("DECISION TREE --------------------------------------------------------------------------")
-    # run_ej1_tree(train_df, test_df)
+    # run_ej1_tree(df, train_df, test_df)
     # print("RANDOM FOREST --------------------------------------------------------------------------")
     # run_ej1_forest(df, train_df, test_df)
